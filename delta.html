@@ -1,276 +1,316 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DELTA Coin Swap</title>
-    <script src="https://cdn.jsdelivr.net/npm/web3/dist/web3.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <style>
-        body {
-            font-family: 'Roboto', sans-serif;
-            background: linear-gradient(145deg, #f3f4f7, #e1e5f2);
-            margin: 0;
-            padding: 0;
-        }
-
-        .container {
-            max-width: 700px;
-            margin: 50px auto;
-            background-color: #ffffff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            border: 1px solid #e0e0e0;
-        }
-
-        h1 {
-            font-size: 2.5em;
-            color: #1e1e1e;
-            margin-bottom: 20px;
-        }
-
-        p {
-            font-size: 1.1em;
-            color: #333;
-            margin-bottom: 20px;
-        }
-
-        input[type="number"], select {
-            padding: 12px;
-            margin: 10px;
-            font-size: 16px;
-            width: 100%;
-            border: 2px solid #007bff;
-            border-radius: 8px;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-
-        input[type="number"]:focus, select:focus {
-            border-color: #0056b3;
-        }
-
-        button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 18px;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            width: 100%;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-
-        #balance, #result {
-            margin-top: 20px;
-            font-size: 18px;
-            color: #28a745;
-        }
-
-        #error {
-            margin-top: 20px;
-            font-size: 16px;
-            color: #dc3545;
-        }
-
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            font-size: 14px;
-            color: #6c757d;
-        }
-
-        .footer a {
-            text-decoration: none;
-            color: #007bff;
-        }
-
-        .footer a:hover {
-            text-decoration: underline;
-        }
-
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DELTA Coin Swap on Base</title>
+  <script src="https://cdn.jsdelivr.net/npm/web3/dist/web3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(145deg, #f3f4f7, #e1e5f2);
+      margin: 0; padding: 0;
+    }
+    .container {
+      max-width: 700px; margin: 50px auto;
+      background-color: #ffffff; padding: 30px; border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); text-align: center;
+      border: 1px solid #e0e0e0;
+    }
+    h1 {
+      font-size: 2.5em; color: #1e1e1e; margin-bottom: 20px;
+    }
+    p {
+      font-size: 1.1em; color: #333; margin-bottom: 20px;
+    }
+    input[type="number"], select {
+      padding: 12px; margin: 10px; font-size: 16px; width: 100%;
+      border: 2px solid #007bff; border-radius: 8px; outline: none;
+      transition: border-color 0.3s;
+    }
+    input[type="number"]:focus, select:focus {
+      border-color: #0056b3;
+    }
+    button {
+      background-color: #007bff; color: white; border: none;
+      padding: 15px 30px; font-size: 18px; border-radius: 50px;
+      cursor: pointer; transition: background-color 0.3s; width: 100%;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    #balance, #result {
+      margin-top: 20px; font-size: 18px; color: #28a745;
+    }
+    #error {
+      margin-top: 20px; font-size: 16px; color: #dc3545;
+    }
+    .footer {
+      text-align: center; margin-top: 30px; font-size: 14px; color: #6c757d;
+    }
+    .footer a {
+      text-decoration: none; color: #007bff;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>DELTA Coin Swap</h1>
-        <p>Enter the amount of DELTA Coin and select a currency to swap to:</p>
+  <div class="container">
+    <h1>DELTA Coin Swap (Base)</h1>
+    <p>Enter the amount of DELTA and select a token to swap to:</p>
 
-        <input type="number" id="deltaAmount" placeholder="Amount of DELTA" min="0" />
-        <br/>
+    <input type="number" id="deltaAmount" placeholder="Amount of DELTA" min="0" />
+    <br/>
 
-        <label for="currencySelect">Choose a currency to swap to:</label>
-        <select id="currencySelect">
-            <option value="ethereum">Ethereum (ETH)</option>
-            <option value="bitcoin">Bitcoin (BTC)</option>
-            <option value="dogecoin">Dogecoin (DOGE)</option>
-        </select>
-        <br/>
+    <label for="currencySelect">Choose a token to swap to:</label>
+    <select id="currencySelect">
+      <option value="ethereum">Ethereum (WETH on Base)</option>
+      <option value="bitcoin">Bitcoin (Bridged BTC on Base)</option>
+      <option value="dogecoin">Dogecoin (Bridged DOGE on Base)</option>
+    </select>
+    <br/>
 
-        <button onclick="swapCurrency()">Swap</button>
-        <br/>
+    <button onclick="swapCurrency()">Swap</button>
+    <br/>
 
-        <div id="balance">DELTA Balance: Loading...</div>
-        <div id="result"></div>
-        <div id="error"></div>
-    </div>
+    <div id="balance">DELTA Balance: Loading...</div>
+    <div id="result"></div>
+    <div id="error"></div>
+  </div>
 
-    <div class="footer">
-        <p>Powered by <a href="https://www.uniswap.org/" target="_blank">Uniswap</a></p>
-    </div>
+  <div class="footer">
+    <p>Powered by <a href="https://uniswap.org/" target="_blank">Uniswap</a> on Base</p>
+  </div>
 
-    <script>
-        const deltaCoinAddress = '0x9ed933f2241135AE6b37e5Ad3EbD6D2a4D989fec'; // DELTA Coin address on Base network
-        const uniswapRouterAddress = '0xE592427A0AEce92De3Edee1F18E0157C05861564'; // Uniswap V3 Router address on Base network
-        const deltaCoinABI = [
-            {
-                "constant": true,
-                "inputs": [
-                    { "name": "account", "type": "address" }
-                ],
-                "name": "balanceOf",
-                "outputs": [
-                    { "name": "", "type": "uint256" }
-                ],
-                "payable": false,
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "constant": false,
-                "inputs": [
-                    { "name": "recipient", "type": "address" },
-                    { "name": "amount", "type": "uint256" }
-                ],
-                "name": "transfer",
-                "outputs": [
-                    { "name": "", "type": "bool" }
-                ],
-                "payable": false,
-                "stateMutability": "nonpayable",
-                "type": "function"
-            }
-        ];
+  <script>
+    /***************************************
+     * 1. CONTRACT ADDRESSES & ABIs
+     ****************************************/
+    // DELTA on Base
+    const deltaCoinAddress = "0x9ed933f2241135AE6b37e5Ad3EbD6D2a4D989fec";
 
-        const uniswapRouterABI = [
-            {
-                "inputs": [
-                    { "internalType": "uint256", "name": "amountIn", "type": "uint256" },
-                    { "internalType": "uint256", "name": "amountOutMin", "type": "uint256" },
-                    { "internalType": "address[]", "name": "path", "type": "address[]" },
-                    { "internalType": "address", "name": "to", "type": "address" },
-                    { "internalType": "uint256", "name": "deadline", "type": "uint256" }
-                ],
-                "name": "swapExactTokensForTokens",
-                "outputs": [
-                    { "internalType": "uint256[]", "name": "", "type": "uint256[]" }
-                ],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            }
-        ];
+    // Example: Uniswap V3 Router on Base
+    // If you have a different router, use that address/ABI
+    const uniswapRouterAddress = "0xE592427A0AEce92De3Edee1F18E0157C05861564";
 
-        let web3;
-        let userAccount;
+    // Base chain ID (hex) for mainnet: 0x2105 = 8457 in decimal
+    const BASE_CHAIN_ID = "0x2105";
 
-        // Check if MetaMask or another Ethereum provider is available
-        if (typeof window.ethereum !== 'undefined') {
-            web3 = new Web3(window.ethereum);
-            window.ethereum.request({ method: 'eth_requestAccounts' }).then(accounts => {
-                userAccount = accounts[0]; // Get the user's account address
-                displayBalance(); // Display DELTA balance
-            }).catch(err => {
-                alert("Please connect your MetaMask wallet.");
+    // DELTA Token ABI (simplified)
+    const deltaCoinABI = [
+      {
+        "constant": true,
+        "inputs": [{"name": "account", "type": "address"}],
+        "name": "balanceOf",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "constant": false,
+        "inputs": [
+          {"name": "spender","type": "address"},
+          {"name": "amount","type": "uint256"}
+        ],
+        "name": "approve",
+        "outputs": [{"name": "", "type": "bool"}],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+      }
+    ];
+
+    // Uniswap V3 Router ABI (swapExactTokensForTokens)
+    const uniswapRouterABI = [
+      {
+        "inputs": [
+          {"internalType": "uint256","name": "amountIn","type": "uint256"},
+          {"internalType": "uint256","name": "amountOutMin","type": "uint256"},
+          {"internalType": "address[]","name": "path","type": "address[]"},
+          {"internalType": "address","name": "to","type": "address"},
+          {"internalType": "uint256","name": "deadline","type": "uint256"}
+        ],
+        "name": "swapExactTokensForTokens",
+        "outputs": [{"internalType": "uint256[]","name": "","type": "uint256[]"}],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      }
+    ];
+
+    /***************************************
+     * 2. SETUP WEB3 + METAMASK
+     ****************************************/
+    let web3;
+    let userAccount;
+
+    // Wait for the window to load to avoid race conditions
+    window.addEventListener('load', async () => {
+      if (typeof window.ethereum !== 'undefined') {
+        web3 = new Web3(window.ethereum);
+
+        // Request accounts
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+          userAccount = accounts[0];
+        } catch (err) {
+          alert("Please connect your MetaMask wallet.");
+          return;
+        }
+
+        // Switch to Base network if not already
+        await switchToBaseNetwork();
+
+        // Display user’s DELTA balance
+        displayBalance();
+      } else {
+        alert("Please install MetaMask or another Ethereum wallet.");
+      }
+    });
+
+    // Switch user to Base mainnet in MetaMask
+    async function switchToBaseNetwork() {
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: BASE_CHAIN_ID }] // 0x2105 for Base mainnet
+        });
+      } catch (error) {
+        // Error code 4902 = chain not added to MetaMask
+        if (error.code === 4902) {
+          try {
+            await window.ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [{
+                chainId: BASE_CHAIN_ID,
+                chainName: 'Base Mainnet',
+                nativeCurrency: {
+                  name: 'ETH',
+                  symbol: 'ETH',
+                  decimals: 18
+                },
+                rpcUrls: ['https://mainnet.base.org'],
+                blockExplorerUrls: ['https://basescan.org']
+              }]
             });
+          } catch (addError) {
+            console.error("Failed to add Base network to MetaMask:", addError);
+          }
         } else {
-            alert("Please install MetaMask or another Ethereum wallet.");
+          console.error("Failed to switch to Base network:", error);
+        }
+      }
+    }
+
+    /***************************************
+     * 3. DISPLAY DELTA BALANCE
+     ****************************************/
+    async function displayBalance() {
+      if (!userAccount) return;
+
+      const deltaCoin = new web3.eth.Contract(deltaCoinABI, deltaCoinAddress);
+      try {
+        const balance = await deltaCoin.methods.balanceOf(userAccount).call();
+        const deltaBalance = web3.utils.fromWei(balance, 'ether');
+        document.getElementById('balance').innerText = `DELTA Balance: ${deltaBalance} DELTA`;
+      } catch (error) {
+        console.error("Error fetching DELTA balance:", error);
+        document.getElementById('balance').innerText = "Error fetching DELTA balance";
+      }
+    }
+
+    /***************************************
+     * 4. APPROVE DELTA FOR UNISWAP
+     ****************************************/
+    async function approveDeltaForUniswap(amountInWei) {
+      const deltaCoin = new web3.eth.Contract(deltaCoinABI, deltaCoinAddress);
+      try {
+        // This transaction should open a MetaMask prompt
+        const approvalTx = await deltaCoin.methods
+          .approve(uniswapRouterAddress, amountInWei)
+          .send({ from: userAccount });
+
+        console.log("Approval transaction:", approvalTx);
+        return approvalTx;
+      } catch (error) {
+        console.error("Approval failed:", error);
+        throw new Error("Approval failed or rejected in MetaMask");
+      }
+    }
+
+    /***************************************
+     * 5. SWAP DELTA -> SELECTED TOKEN
+     ****************************************/
+    async function swapCurrency() {
+      const deltaAmount = document.getElementById('deltaAmount').value;
+      const selectedCurrency = document.getElementById('currencySelect').value;
+      const errorDiv = document.getElementById('error');
+      errorDiv.innerHTML = ""; // Clear previous errors
+      document.getElementById('result').innerHTML = ""; // Clear result
+
+      if (!deltaAmount || deltaAmount <= 0) {
+        alert("Please enter a valid amount of DELTA.");
+        return;
+      }
+
+      try {
+        // Convert DELTA to Wei
+        const amountInWei = web3.utils.toWei(deltaAmount, 'ether');
+
+        // You must set the second token address properly for each option.
+        // For example, if you want to swap to WETH on Base, you need the WETH contract on Base.
+        let outputTokenAddress = "";
+        if (selectedCurrency === 'ethereum') {
+          // WETH on Base (example address placeholder)
+          outputTokenAddress = "0x4200000000000000000000000000000000000006"; 
+        } else if (selectedCurrency === 'bitcoin') {
+          // Bridged BTC on Base (placeholder address - must be replaced with a real one)
+          outputTokenAddress = "0x1234567890ABCDEF000000000000000000000BTC";
+        } else if (selectedCurrency === 'dogecoin') {
+          // Bridged DOGE on Base (placeholder address - must be replaced with a real one)
+          outputTokenAddress = "0x1234567890ABCDEF000000000000000000000DOGE";
         }
 
-        // Function to fetch and display the DELTA coin balance
-        async function displayBalance() {
-            if (!userAccount) return;
+        // The swap path: DELTA -> [some intermediate if needed] -> output token
+        // If Uniswap supports a direct pool from DELTA -> WETH, you can do [deltaCoinAddress, outputTokenAddress].
+        const path = [deltaCoinAddress, outputTokenAddress];
 
-            const deltaCoin = new web3.eth.Contract(deltaCoinABI, deltaCoinAddress);
-            try {
-                const balance = await deltaCoin.methods.balanceOf(userAccount).call();
-                document.getElementById('balance').innerText = `DELTA Balance: ${web3.utils.fromWei(balance, 'ether')} DELTA`;
-            } catch (error) {
-                console.error("Error fetching DELTA balance:", error);
-                document.getElementById('balance').innerText = "Error fetching DELTA balance";
-            }
-        }
+        // Deadline for the swap (in seconds)
+        const deadline = Math.floor(Date.now() / 1000) + (60 * 10); // 10 minutes from now
 
-        // Function to approve DELTA token for Uniswap
-        async function approveDeltaForUniswap(amountIn) {
-            const deltaCoin = new web3.eth.Contract(deltaCoinABI, deltaCoinAddress);
-            const uniswapRouter = new web3.eth.Contract(uniswapRouterABI, uniswapRouterAddress);
-            try {
-                const approvalTx = await deltaCoin.methods.approve(uniswapRouterAddress, amountIn).send({ from: userAccount });
-                console.log("Approval transaction: ", approvalTx);
-            } catch (error) {
-                console.error("Approval failed:", error);
-                alert("Approval failed");
-            }
-        }
+        // (A) Approve DELTA for Uniswap Router
+        await approveDeltaForUniswap(amountInWei);
 
-        // Function to swap DELTA for selected currency
-        async function swapCurrency() {
-            const deltaAmount = document.getElementById('deltaAmount').value;
-            const selectedCurrency = document.getElementById('currencySelect').value;
-            const errorDiv = document.getElementById('error');
+        // (B) Call Uniswap swap
+        const uniswapRouter = new web3.eth.Contract(uniswapRouterABI, uniswapRouterAddress);
 
-            if (!deltaAmount || deltaAmount <= 0) {
-                alert("Please enter a valid amount of DELTA.");
-                return;
-            }
+        // This transaction should open a second MetaMask prompt
+        const swapTx = await uniswapRouter.methods
+          .swapExactTokensForTokens(
+            amountInWei,
+            0,          // Minimum amountOut (use slippage controls in production)
+            path,
+            userAccount, // Tokens will go back to the user's address
+            deadline
+          )
+          .send({ from: userAccount });
 
-            try {
-                // Convert DELTA to Wei
-                const amountIn = web3.utils.toWei(deltaAmount, 'ether');
-                const path = [deltaCoinAddress, '0x...']; // Set the correct output token address (e.g., ETH, BTC)
+        console.log("Swap transaction:", swapTx);
+        alert("Swap successful!");
+        document.getElementById('result').innerText = "Swap completed successfully.";
+        
+        // Update balance after swap
+        displayBalance();
 
-                // Check if path for selected currency is correct
-                if (selectedCurrency === 'ethereum') {
-                    path[1] = '0x...'; // Set the WETH or ETH address
-                } else if (selectedCurrency === 'bitcoin') {
-                    path[1] = '0x...'; // Set the correct BTC address
-                } else if (selectedCurrency === 'dogecoin') {
-                    path[1] = '0x...'; // Set the correct DOGE address
-                }
-
-                const deadline = Math.floor(Date.now() / 1000) + 60 * 10; // Deadline for the swap (10 minutes)
-
-                // Approve DELTA token for Uniswap Router
-                await approveDeltaForUniswap(amountIn);
-
-                // Call Uniswap's swapExactTokensForTokens function and send the transaction via MetaMask
-                const uniswapRouter = new web3.eth.Contract(uniswapRouterABI, uniswapRouterAddress);
-                
-                const swapTx = await uniswapRouter.methods.swapExactTokensForTokens(
-                    amountIn,
-                    0, // Set minimum output amount (slippage could be handled here)
-                    path,
-                    userAccount,
-                    deadline
-                ).send({ from: userAccount });
-
-                // Log the swap transaction
-                console.log("Swap transaction:", swapTx);
-                alert("Swap successful!");
-                displayBalance(); // Update balance after swap
-            } catch (error) {
-                console.error("Error during the swap:", error);
-                errorDiv.innerHTML = `<p>Error: ${error.message}</p>`;
-                alert("An error occurred while performing the swap. Please check the console for details.");
-            }
-        }
-    </script>
+      } catch (error) {
+        console.error("Error during the swap:", error);
+        errorDiv.innerHTML = `<p>Error: ${error.message}</p>`;
+        alert("An error occurred while performing the swap. Check console for details.");
+      }
+    }
+  </script>
 </body>
 </html>
