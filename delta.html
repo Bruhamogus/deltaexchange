@@ -8,29 +8,94 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            padding: 20px;
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(145deg, #f3f4f7, #e1e5f2);
+            margin: 0;
+            padding: 0;
         }
+
         .container {
-            max-width: 600px;
-            margin: 0 auto;
+            max-width: 700px;
+            margin: 50px auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             text-align: center;
+            border: 1px solid #e0e0e0;
         }
-        select, input, button {
-            padding: 10px;
+
+        h1 {
+            font-size: 2.5em;
+            color: #1e1e1e;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 1.1em;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        input[type="number"], select {
+            padding: 12px;
             margin: 10px;
             font-size: 16px;
+            width: 100%;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.3s;
         }
-        #result {
+
+        input[type="number"]:focus, select:focus {
+            border-color: #0056b3;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #balance, #result {
             margin-top: 20px;
             font-size: 18px;
+            color: #28a745;
         }
-        #balance {
+
+        #error {
             margin-top: 20px;
-            font-size: 18px;
-            color: green;
+            font-size: 16px;
+            color: #dc3545;
         }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .footer a {
+            text-decoration: none;
+            color: #007bff;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
     </style>
 </head>
 <body>
@@ -54,6 +119,11 @@
 
         <div id="balance">DELTA Balance: Loading...</div>
         <div id="result"></div>
+        <div id="error"></div>
+    </div>
+
+    <div class="footer">
+        <p>Powered by <a href="https://www.uniswap.org/" target="_blank">Uniswap</a></p>
     </div>
 
     <script>
@@ -154,6 +224,7 @@
         async function swapCurrency() {
             const deltaAmount = document.getElementById('deltaAmount').value;
             const selectedCurrency = document.getElementById('currencySelect').value;
+            const errorDiv = document.getElementById('error');
 
             if (!deltaAmount || deltaAmount <= 0) {
                 alert("Please enter a valid amount of DELTA.");
@@ -164,27 +235,40 @@
                 // Convert DELTA to Wei
                 const amountIn = web3.utils.toWei(deltaAmount, 'ether');
                 const path = [deltaCoinAddress, '0x...']; // Set the correct output token address (e.g., ETH, BTC)
+
+                // Check if path for selected currency is correct
+                if (selectedCurrency === 'ethereum') {
+                    path[1] = '0x...'; // Set the WETH or ETH address
+                } else if (selectedCurrency === 'bitcoin') {
+                    path[1] = '0x...'; // Set the correct BTC address
+                } else if (selectedCurrency === 'dogecoin') {
+                    path[1] = '0x...'; // Set the correct DOGE address
+                }
+
                 const deadline = Math.floor(Date.now() / 1000) + 60 * 10; // Deadline for the swap (10 minutes)
 
                 // Approve DELTA token for Uniswap Router
                 await approveDeltaForUniswap(amountIn);
 
-                // Call Uniswap's swapExactTokensForTokens function
+                // Call Uniswap's swapExactTokensForTokens function and send the transaction via MetaMask
                 const uniswapRouter = new web3.eth.Contract(uniswapRouterABI, uniswapRouterAddress);
+                
                 const swapTx = await uniswapRouter.methods.swapExactTokensForTokens(
                     amountIn,
-                    0, // Set minimum output amount
+                    0, // Set minimum output amount (slippage could be handled here)
                     path,
                     userAccount,
                     deadline
                 ).send({ from: userAccount });
 
+                // Log the swap transaction
                 console.log("Swap transaction:", swapTx);
                 alert("Swap successful!");
                 displayBalance(); // Update balance after swap
             } catch (error) {
                 console.error("Error during the swap:", error);
-                alert("An error occurred while performing the swap.");
+                errorDiv.innerHTML = `<p>Error: ${error.message}</p>`;
+                alert("An error occurred while performing the swap. Please check the console for details.");
             }
         }
     </script>
