@@ -46,10 +46,6 @@
             <option value="ethereum">Ethereum (ETH)</option>
             <option value="bitcoin">Bitcoin (BTC)</option>
             <option value="dogecoin">Dogecoin (DOGE)</option>
-            <option value="eur">Euro (EUR)</option>
-            <option value="usd">US Dollar (USD)</option>
-            <option value="try">Turkish Lira (TRY)</option>
-            <option value="dzd">Algerian Dinar (DZD)</option>
         </select>
         <br/>
 
@@ -62,6 +58,7 @@
 
     <script>
         const deltaCoinAddress = '0x9ed933f2241135AE6b37e5Ad3EbD6D2a4D989fec'; // DELTA Coin address on Base network
+        const uniswapRouterAddress = '0xE592427A0AEce92De3Edee1F18E0157C05861564'; // Uniswap V3 Router address on Base network
         const deltaCoinABI = [
             {
                 "constant": true,
@@ -74,6 +71,38 @@
                 ],
                 "payable": false,
                 "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": false,
+                "inputs": [
+                    { "name": "recipient", "type": "address" },
+                    { "name": "amount", "type": "uint256" }
+                ],
+                "name": "transfer",
+                "outputs": [
+                    { "name": "", "type": "bool" }
+                ],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "function"
+            }
+        ];
+
+        const uniswapRouterABI = [
+            {
+                "inputs": [
+                    { "internalType": "uint256", "name": "amountIn", "type": "uint256" },
+                    { "internalType": "uint256", "name": "amountOutMin", "type": "uint256" },
+                    { "internalType": "address[]", "name": "path", "type": "address[]" },
+                    { "internalType": "address", "name": "to", "type": "address" },
+                    { "internalType": "uint256", "name": "deadline", "type": "uint256" }
+                ],
+                "name": "swapExactTokensForTokens",
+                "outputs": [
+                    { "internalType": "uint256[]", "name": "", "type": "uint256[]" }
+                ],
+                "stateMutability": "nonpayable",
                 "type": "function"
             }
         ];
@@ -108,7 +137,20 @@
             }
         }
 
-        // Function to swap DELTA to selected currency
+        // Function to approve DELTA token for Uniswap
+        async function approveDeltaForUniswap(amountIn) {
+            const deltaCoin = new web3.eth.Contract(deltaCoinABI, deltaCoinAddress);
+            const uniswapRouter = new web3.eth.Contract(uniswapRouterABI, uniswapRouterAddress);
+            try {
+                const approvalTx = await deltaCoin.methods.approve(uniswapRouterAddress, amountIn).send({ from: userAccount });
+                console.log("Approval transaction: ", approvalTx);
+            } catch (error) {
+                console.error("Approval failed:", error);
+                alert("Approval failed");
+            }
+        }
+
+        // Function to swap DELTA for selected currency
         async function swapCurrency() {
             const deltaAmount = document.getElementById('deltaAmount').value;
             const selectedCurrency = document.getElementById('currencySelect').value;
@@ -119,48 +161,30 @@
             }
 
             try {
-                let conversionRate = 0;
-                let resultText = '';
-                
-                if (['ethereum', 'bitcoin', 'dogecoin'].includes(selectedCurrency)) {
-                    // Fetch crypto conversion rate using CoinGecko API
-                    const response = await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=ethereum,bitcoin,dogecoin&vs_currencies=usd`);
-                    const rates = response.data;
+                // Convert DELTA to Wei
+                const amountIn = web3.utils.toWei(deltaAmount, 'ether');
+                const path = [deltaCoinAddress, '0x...']; // Set the correct output token address (e.g., ETH, BTC)
+                const deadline = Math.floor(Date.now() / 1000) + 60 * 10; // Deadline for the swap (10 minutes)
 
-                    if (selectedCurrency === 'ethereum') {
-                        conversionRate = rates.ethereum.usd; // USD per ETH
-                        resultText = `${deltaAmount} DELTA = ${(deltaAmount * conversionRate).toFixed(4)} ETH`;
-                    } else if (selectedCurrency === 'bitcoin') {
-                        conversionRate = rates.bitcoin.usd; // USD per BTC
-                        resultText = `${deltaAmount} DELTA = ${(deltaAmount * conversionRate).toFixed(4)} BTC`;
-                    } else if (selectedCurrency === 'dogecoin') {
-                        conversionRate = rates.dogecoin.usd; // USD per DOGE
-                        resultText = `${deltaAmount} DELTA = ${(deltaAmount * conversionRate).toFixed(4)} DOGE`;
-                    }
-                } else {
-                    // Fetch fiat conversion rate using ExchangeRate-API
-                    const response = await axios.get(`https://api.exchangerate-api.com/v4/latest/USD`);
-                    const rates = response.data.rates;
+                // Approve DELTA token for Uniswap Router
+                await approveDeltaForUniswap(amountIn);
 
-                    if (selectedCurrency === 'eur') {
-                        conversionRate = rates.EUR;
-                        resultText = `${deltaAmount} DELTA = ${(deltaAmount * conversionRate).toFixed(2)} EUR`;
-                    } else if (selectedCurrency === 'usd') {
-                        conversionRate = 1; // USD to USD is 1
-                        resultText = `${deltaAmount} DELTA = ${(deltaAmount * conversionRate).toFixed(2)} USD`;
-                    } else if (selectedCurrency === 'try') {
-                        conversionRate = rates.TRY;
-                        resultText = `${deltaAmount} DELTA = ${(deltaAmount * conversionRate).toFixed(2)} TRY`;
-                    } else if (selectedCurrency === 'dzd') {
-                        conversionRate = rates.DZD;
-                        resultText = `${deltaAmount} DELTA = ${(deltaAmount * conversionRate).toFixed(2)} DZD`;
-                    }
-                }
+                // Call Uniswap's swapExactTokensForTokens function
+                const uniswapRouter = new web3.eth.Contract(uniswapRouterABI, uniswapRouterAddress);
+                const swapTx = await uniswapRouter.methods.swapExactTokensForTokens(
+                    amountIn,
+                    0, // Set minimum output amount
+                    path,
+                    userAccount,
+                    deadline
+                ).send({ from: userAccount });
 
-                document.getElementById('result').innerText = resultText;
+                console.log("Swap transaction:", swapTx);
+                alert("Swap successful!");
+                displayBalance(); // Update balance after swap
             } catch (error) {
                 console.error("Error during the swap:", error);
-                alert("An error occurred while fetching conversion rates.");
+                alert("An error occurred while performing the swap.");
             }
         }
     </script>
