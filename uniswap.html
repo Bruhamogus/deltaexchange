@@ -3,89 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Swap DELTA to ETH</title>
-    <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.6.3/dist/umd/index.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/web3/dist/web3.min.js"></script>
+    <title>DeltaCoin Price and Swap</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/@uniswap/widget"></script>
     <style>
         body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f4f4f4;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        .price-container {
+            margin: 20px;
+            font-size: 24px;
+        }
+        .swap-container {
+            margin-top: 40px;
+        }
+        .swap-widget {
+            width: 100%;
+            max-width: 600px;
+            height: 450px;
         }
     </style>
 </head>
 <body>
+
+    <h1>DeltaCoin Price and Swap</h1>
+
+    <div class="price-container">
+        <p>DeltaCoin (DELTA) Price: <span id="deltaPrice">Loading...</span></p>
+        <p>Price Change (24h): <span id="priceChange">Loading...</span></p>
+    </div>
+
+    <div class="swap-container">
+        <h2>Swap DeltaCoin on Uniswap</h2>
+        <div id="uniswap-widget" class="swap-widget"></div>
+    </div>
+
     <script>
-        // URL of GeckoTerminal pool (DELTA/ETH pool)
-        const poolURL = 'https://www.geckoterminal.com/de/base/pools/0x7487c50bf616088c1f28df50b6d73109241c3f9221cf942b5796e900f31fbdd4';
+        // Fetch DeltaCoin price and growth data from GeckoTerminal
+        const contractAddress = "0x7487c50bf616088c1f28df50b6d73109241c3f9221cf942b5796e900f31fbdd4";
+        const geckoUrl = `https://api.geckoterminal.com/api/v2/price?contractAddress=${contractAddress}&network=base`;
 
-        // Function to fetch the price from GeckoTerminal (this is a mock example)
-        async function fetchPoolPrice() {
-            try {
-                const response = await fetch(poolURL);
-                const html = await response.text();
+        axios.get(geckoUrl)
+            .then(response => {
+                const price = response.data.data.price;
+                const percentChange = response.data.data.price_change_percentage_24h;
 
-                // Parse the HTML or use regular expressions to extract the price
-                const price = parsePriceFromHtml(html);
-                console.log("Current DELTA to ETH price:", price);
-                return price;
-            } catch (error) {
-                console.error('Error fetching pool data:', error);
-            }
-        }
+                // Display price and growth
+                document.getElementById('deltaPrice').textContent = `$${price.toFixed(2)}`;
+                document.getElementById('priceChange').textContent = `${percentChange.toFixed(2)}%`;
+            })
+            .catch(error => {
+                console.error("Error fetching price data", error);
+                document.getElementById('deltaPrice').textContent = "Error";
+                document.getElementById('priceChange').textContent = "Error";
+            });
 
-        // Simple function to parse price (replace with actual logic based on page structure)
-        function parsePriceFromHtml(html) {
-            // Example regex, assuming GeckoTerminal price is inside a <span> with class `price-class`
-            const regex = /<span class="price-class">([0-9.]+)<\/span>/;  // Modify with actual class name or element
-            const match = html.match(regex);
-            if (match) {
-                return parseFloat(match[1]);
-            }
-            return null; // If not found, return null
-        }
-
-        // Function to handle wallet connection and token swap
-        async function connectWallet() {
-            const price = await fetchPoolPrice(); // Fetch the price from GeckoTerminal
-            if (!price) {
-                console.error('Failed to fetch price');
-                return;
-            }
-
-            try {
-                // Initialize WalletConnect provider (no Polygon RPC, use a Base network RPC here)
-                const provider = new WalletConnectProvider({
-                    rpc: { 8453: "https://base-rpc-url.com" },  // Replace with actual Base network RPC
-                    chainId: 8453 // Example chainId for Base network (adjust as necessary)
-                });
-
-                // Enable the provider (connect to the wallet)
-                await provider.enable();
-                const web3 = new Web3(provider);
-
-                // DELTA and ETH token addresses (adjust for your tokens)
-                const DELTA_ADDRESS = '0x9ed933f2241135AE6b37e5Ad3EbD6D2a4D989fec'; // DELTA address
-                const ETH_ADDRESS = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'; // ETH address
-
-                const chainId = 8453; // Use Base network chain ID
-
-                // Set up Uniswap swap using the fetched price
-                // Here you'd create the necessary transaction for the swap
-                // Example: calculate the swap amount using the fetched price
-                console.log(`Swap logic for DELTA to ETH at price ${price}`);
-
-                // Swap logic goes here, e.g., send a transaction to Uniswap using the Web3 provider
-
-            } catch (error) {
-                console.error('Error connecting wallet or swapping:', error);
-            }
-        }
-
-        // Trigger the wallet connection and fetch price on page load
-        window.onload = connectWallet;
+        // Initialize Uniswap widget with DeltaCoin (DELTA) preselected
+        const uniswapWidget = new window.Uniswap.Widget({
+            tokenFrom: "0x9ed933f2241135AE6b37e5Ad3EbD6D2a4D989fec", // DeltaCoin contract address
+            theme: "light",
+            swapTarget: "uniswap",
+            container: document.getElementById('uniswap-widget')
+        });
+        uniswapWidget.render();
     </script>
+
 </body>
 </html>
