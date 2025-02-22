@@ -1,62 +1,59 @@
-import { useState, useEffect } from "react";
-import { ethers } from "ethers";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delta Swap</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.umd.min.js"></script>
+</head>
+<body>
+    <h2>Swap DELTA for ETH</h2>
+    <input type="number" id="amount" placeholder="Amount in DELTA">
+    <button id="connectWallet">Connect Wallet</button>
+    <button id="swapTokens">Swap</button>
+    <p id="balance">Balance: </p>
 
-const DELTA_ADDRESS = "0x9ed933f2241135AE6b37e5Ad3EbD6D2a4D989fec";
-const DELTA_ABI = [
-  "function approve(address spender, uint256 amount) public returns (bool)",
-  "function balanceOf(address owner) view returns (uint256)",
-  "function transferFrom(address sender, address recipient, uint256 amount) public returns (bool)"
-];
+    <script>
+        const DELTA_ADDRESS = "0x9ed933f2241135AE6b37e5Ad3EbD6D2a4D989fec";
+        const DELTA_ABI = [
+            "function approve(address spender, uint256 amount) public returns (bool)",
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transferFrom(address sender, address recipient, uint256 amount) public returns (bool)"
+        ];
+        
+        let provider;
+        let signer;
+        let account;
 
-export default function Swap() {
-  const [amount, setAmount] = useState("");
-  const [account, setAccount] = useState(null);
-  const [provider, setProvider] = useState(null);
+        async function connectWallet() {
+            if (!window.ethereum) return alert("MetaMask not found");
+            provider = new ethers.providers.Web3Provider(window.ethereum);
+            await provider.send("eth_requestAccounts", []);
+            signer = provider.getSigner();
+            account = await signer.getAddress();
+            updateBalance();
+        }
 
-  useEffect(() => {
-    if (window.ethereum) {
-      const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
-      setProvider(web3Provider);
-    }
-  }, []);
+        async function updateBalance() {
+            if (!provider || !account) return;
+            const deltaContract = new ethers.Contract(DELTA_ADDRESS, DELTA_ABI, provider);
+            const balance = await deltaContract.balanceOf(account);
+            document.getElementById("balance").innerText = `Balance: ${ethers.utils.formatUnits(balance, 18)} DELTA`;
+        }
 
-  const connectWallet = async () => {
-    if (!provider) return;
-    const accounts = await provider.send("eth_requestAccounts", []);
-    setAccount(accounts[0]);
-  };
+        async function swapTokens() {
+            if (!provider || !account) return;
+            const deltaContract = new ethers.Contract(DELTA_ADDRESS, DELTA_ABI, signer);
+            const amount = document.getElementById("amount").value;
+            const amountInWei = ethers.utils.parseUnits(amount, 18);
+            await deltaContract.approve(account, amountInWei);
+            await deltaContract.transferFrom(account, "swap_contract_address", amountInWei);
+            alert("Swap successful!");
+            updateBalance();
+        }
 
-  const swapTokens = async () => {
-    if (!provider || !account) return;
-    const signer = provider.getSigner();
-    const deltaContract = new ethers.Contract(DELTA_ADDRESS, DELTA_ABI, signer);
-    const amountInWei = ethers.utils.parseUnits(amount, 18);
-    
-    await deltaContract.approve(account, amountInWei);
-    await deltaContract.transferFrom(account, "swap_contract_address", amountInWei);
-    
-    // Implement ETH payout logic
-  };
-
-  return (
-    <div className="flex justify-center items-center h-screen bg-gray-900 text-white">
-      <Card className="w-96 p-6">
-        <CardContent>
-          <h2 className="text-xl font-bold mb-4">Swap DELTA for ETH</h2>
-          <Input 
-            type="number" 
-            placeholder="Amount in DELTA" 
-            value={amount} 
-            onChange={(e) => setAmount(e.target.value)}
-          />
-          <Button className="w-full mt-4" onClick={account ? swapTokens : connectWallet}>
-            {account ? "Swap" : "Connect Wallet"}
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
+        document.getElementById("connectWallet").addEventListener("click", connectWallet);
+        document.getElementById("swapTokens").addEventListener("click", swapTokens);
+    </script>
+</body>
+</html>
