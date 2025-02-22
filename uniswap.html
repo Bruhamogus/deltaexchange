@@ -22,5 +22,19 @@
 </head>
 <body>
     <iframe src="https://app.uniswap.org/#/swap?inputCurrency=0x9ed933f2241135AE6b37e5Ad3EbD6D2a4D989fec&outputCurrency=ETH&chain=base"></iframe>
+    <script>
+        // MetaMask wallet connection prompt could be added here if necessary
+        if (typeof window.ethereum !== 'undefined') {
+            ethereum.request({ method: 'eth_requestAccounts' })
+                .then(accounts => {
+                    console.log('MetaMask connected:', accounts);
+                })
+                .catch(error => {
+                    console.log('MetaMask connection error:', error);
+                });
+        } else {
+            alert('MetaMask is not installed. Please install it to interact with the platform.');
+        }
+    </script>
 </body>
 </html>
