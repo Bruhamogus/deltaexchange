@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Swap DELTA to ETH</title>
-    <script src="https://cdn.jsdelivr.net/npm/@uniswap/sdk-core@3.2.0/dist/index.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@uniswap/v3-sdk@3.2.0/dist/index.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.6.3/dist/umd/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3/dist/web3.min.js"></script>
     <style>
         body {
             display: flex;
@@ -19,66 +18,73 @@
 </head>
 <body>
     <script>
-        // Initialize WalletConnect provider
-        const provider = new WalletConnectProvider({
-            rpc: { 137: "https://polygon-rpc.com" }, // You can set your RPC URL for the Base network
-            chainId: 137 // Polygon mainnet, change this if you want Base network (or use any other chainId you want)
-        });
+        // URL of GeckoTerminal pool (DELTA/ETH pool)
+        const poolURL = 'https://www.geckoterminal.com/de/base/pools/0x7487c50bf616088c1f28df50b6d73109241c3f9221cf942b5796e900f31fbdd4';
 
-        async function connectWallet() {
+        // Function to fetch the price from GeckoTerminal (this is a mock example)
+        async function fetchPoolPrice() {
             try {
-                // Enable the provider
-                await provider.enable();
-                console.log('Wallet connected successfully!');
+                const response = await fetch(poolURL);
+                const html = await response.text();
 
-                // Create a Web3 instance using WalletConnect provider
+                // Parse the HTML or use regular expressions to extract the price
+                const price = parsePriceFromHtml(html);
+                console.log("Current DELTA to ETH price:", price);
+                return price;
+            } catch (error) {
+                console.error('Error fetching pool data:', error);
+            }
+        }
+
+        // Simple function to parse price (replace with actual logic based on page structure)
+        function parsePriceFromHtml(html) {
+            // Example regex, assuming GeckoTerminal price is inside a <span> with class `price-class`
+            const regex = /<span class="price-class">([0-9.]+)<\/span>/;  // Modify with actual class name or element
+            const match = html.match(regex);
+            if (match) {
+                return parseFloat(match[1]);
+            }
+            return null; // If not found, return null
+        }
+
+        // Function to handle wallet connection and token swap
+        async function connectWallet() {
+            const price = await fetchPoolPrice(); // Fetch the price from GeckoTerminal
+            if (!price) {
+                console.error('Failed to fetch price');
+                return;
+            }
+
+            try {
+                // Initialize WalletConnect provider (no Polygon RPC, use a Base network RPC here)
+                const provider = new WalletConnectProvider({
+                    rpc: { 8453: "https://base-rpc-url.com" },  // Replace with actual Base network RPC
+                    chainId: 8453 // Example chainId for Base network (adjust as necessary)
+                });
+
+                // Enable the provider (connect to the wallet)
+                await provider.enable();
                 const web3 = new Web3(provider);
 
-                // Set up Uniswap token swap logic
-                const chainId = 137; // The chain ID for your token (Base network or Polygon, for example)
-                const DELTA_ADDRESS = '0x9ed933f2241135AE6b37e5Ad3EbD6D2a4D989fec'; // Your DELTA token address
-                const ETH_ADDRESS = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'; // ETH address for Uniswap
+                // DELTA and ETH token addresses (adjust for your tokens)
+                const DELTA_ADDRESS = '0x9ed933f2241135AE6b37e5Ad3EbD6D2a4D989fec'; // DELTA address
+                const ETH_ADDRESS = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'; // ETH address
 
-                // Initialize Uniswap's SwapRouter and Token logic (assuming Uniswap v3)
-                const DELTA = new Token(chainId, DELTA_ADDRESS, 18);
-                const ETH = new Token(chainId, ETH_ADDRESS, 18);
+                const chainId = 8453; // Use Base network chain ID
 
-                // Create the pair from DELTA -> ETH
-                const pair = await Fetcher.fetchPairData(DELTA, ETH);
-                const route = new Route([pair], DELTA);
+                // Set up Uniswap swap using the fetched price
+                // Here you'd create the necessary transaction for the swap
+                // Example: calculate the swap amount using the fetched price
+                console.log(`Swap logic for DELTA to ETH at price ${price}`);
 
-                // Get the amount to swap (in the real world, this would come from the user's input)
-                const amountIn = "1000000000000000000"; // 1 DELTA (replace with dynamic value)
+                // Swap logic goes here, e.g., send a transaction to Uniswap using the Web3 provider
 
-                const trade = new Trade(route, new TokenAmount(DELTA, amountIn), TradeType.EXACT_INPUT);
-                const slippageTolerance = new Percent("50", "10000"); // 0.5% slippage
-
-                // Create the transaction
-                const path = [DELTA.address, ETH.address];
-                const to = provider.selectedAddress; // Destination wallet address
-                const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes from now
-
-                const transaction = {
-                    data: trade.transaction.data,
-                    to: trade.transaction.to,
-                    from: provider.selectedAddress,
-                    value: trade.transaction.value.toString(),
-                    gasLimit: await web3.eth.estimateGas({ to: trade.transaction.to, data: trade.transaction.data }),
-                    gasPrice: await web3.eth.getGasPrice(),
-                    chainId: chainId,
-                    nonce: await web3.eth.getTransactionCount(provider.selectedAddress),
-                    deadline: deadline,
-                };
-
-                // Send the transaction via the provider (WalletConnect)
-                const txHash = await web3.eth.sendTransaction(transaction);
-                console.log('Transaction sent, hash:', txHash);
             } catch (error) {
                 console.error('Error connecting wallet or swapping:', error);
             }
         }
 
-        // Automatically connect and swap when the page loads (or you can trigger this manually)
+        // Trigger the wallet connection and fetch price on page load
         window.onload = connectWallet;
     </script>
 </body>
