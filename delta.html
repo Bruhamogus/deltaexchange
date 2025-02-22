@@ -53,10 +53,29 @@
     <script>
         let web3;
         let userAccount;
-        const deltaCoinAddress = "0x9ed933f2241135AE6b37e5Ad3EbD6D2a4D989fec"; // DELTA Token on Base
-        const uniswapRouterAddress = "0x327Df1E6de05895d2ab08513aaDD9313Fe505d86"; // Uniswap V3 Router on Base
+        const deltaCoinAddress = "0x9ed933f2241135AE6b37e5Ad3EbD6D2a4D989fec"; // DELTA Token
+        const uniswapRouterAddress = "0x327Df1E6de05895d2ab08513aaDD9313Fe505d86"; // Uniswap Router V3 on Base
         const wethAddress = "0x4200000000000000000000000000000000000006"; // Wrapped ETH (ETH on Base)
-        const deltaABI = [ /* DELTA ERC-20 ABI (balanceOf & approve) */ ];
+
+        const deltaABI = [
+            {
+                "constant": false,
+                "inputs": [
+                    { "name": "_spender", "type": "address" },
+                    { "name": "_value", "type": "uint256" }
+                ],
+                "name": "approve",
+                "outputs": [{ "name": "success", "type": "bool" }],
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [{ "name": "_owner", "type": "address" }],
+                "name": "balanceOf",
+                "outputs": [{ "name": "balance", "type": "uint256" }],
+                "type": "function"
+            }
+        ];
 
         async function connectWallet() {
             if (window.ethereum) {
@@ -71,9 +90,13 @@
         }
 
         async function displayBalance() {
-            const contract = new web3.eth.Contract(deltaABI, deltaCoinAddress);
-            const balance = await contract.methods.balanceOf(userAccount).call();
-            document.getElementById("deltaBalance").innerText = web3.utils.fromWei(balance, "ether");
+            try {
+                const contract = new web3.eth.Contract(deltaABI, deltaCoinAddress);
+                const balance = await contract.methods.balanceOf(userAccount).call();
+                document.getElementById("deltaBalance").innerText = web3.utils.fromWei(balance, "ether");
+            } catch (error) {
+                console.error("Balance Error:", error);
+            }
         }
 
         async function swapDeltaForETH() {
@@ -87,8 +110,15 @@
             const path = [deltaCoinAddress, wethAddress];
 
             try {
+                // Ensure Web3 is initialized
+                if (!web3) {
+                    alert("Connect MetaMask first!");
+                    return;
+                }
+
                 // (A) Approve DELTA for Uniswap (MetaMask Opens)
                 const deltaContract = new web3.eth.Contract(deltaABI, deltaCoinAddress);
+                console.log("Approving Uniswap to spend DELTA...");
                 await deltaContract.methods.approve(uniswapRouterAddress, amountInWei).send({ from: userAccount });
                 alert("Approval successful!");
 
@@ -111,6 +141,7 @@
 
                 const deadline = Math.floor(Date.now() / 1000) + (60 * 10); // 10 minutes from now
 
+                console.log("Executing swap on Uniswap...");
                 await uniswapRouter.methods
                     .swapExactTokensForETH(
                         amountInWei,
