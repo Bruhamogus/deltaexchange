@@ -4,129 +4,125 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DELTA to ETH Swap</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Poppins', sans-serif;
             margin: 0;
-            padding: 0;
-            background-color: #101820FF; /* Dark background */
+            padding: 20px;
+            background-color: #101820FF;
             color: white;
-            display: flex;
-            height: 100vh;
-            align-items: center;
-            justify-content: center;
-            gap: 40px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        /* Background Uniswap Text */
-        #logo-text {
-            position: absolute;
-            font-size: 80px;
-            color: rgba(255, 255, 255, 0.05);
-            top: 20%;
-            left: 50%;
-            transform: translateX(-50%);
-            font-weight: 800;
-            z-index: -1;
-        }
-
-        /* Uniswap Widget Styling */
-        .uniswap-container {
-            background-color: #1C1C1C; /* Dark grey container */
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-            max-width: 450px;
-            width: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-        }
-
-        /* Swap Title */
-        h1 {
-            font-size: 28px;
-            margin-bottom: 20px;
+            min-height: 100vh;
+            gap: 20px;
             text-align: center;
-            color: #fff;
         }
-
-        /* Uniswap Widget */
-        .uniswap-widget {
-            width: 100%;
-            height: 480px;
+        .uniswap-container {
+            background-color: #1C1C1C;
+            padding: 20px;
             border-radius: 15px;
-            border: none;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            max-width: 450px;
+            width: 100%;
         }
-
-        /* Price Box Styling */
         .price-box {
             background: rgba(255, 255, 255, 0.1);
-            padding: 20px;
+            padding: 15px;
             border-radius: 12px;
-            text-align: center;
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
-            width: 220px;
-            color: white;
-            box-shadow: 0 4px 20px rgba(255, 255, 255, 0.1);
+            width: 90%;
+            max-width: 300px;
         }
-
-        /* Footer */
-        .footer {
-            font-size: 14px;
-            color: #999;
-            margin-top: 20px;
-            text-align: center;
+        .price-change {
+            font-size: 16px;
+            margin-top: 5px;
+        }
+        .chart-container {
+            width: 90%;
+            max-width: 500px;
         }
     </style>
 </head>
 <body>
-    <div id="logo-text">Uniswap</div>
-
-    <!-- Uniswap Widget -->
     <div class="uniswap-container">
         <h1>Swap DELTA for ETH</h1>
         <iframe 
             class="uniswap-widget"
             src="https://app.uniswap.org/#/swap?chain=base&inputCurrency=0x9ed933f2241135AE6b37e5Ad3EbD6D2a4D989fec&outputCurrency=ETH&exactField=input&exactAmount=1"
-            frameborder="0">
+            frameborder="0" style="width: 100%; height: 480px; border-radius: 15px;">
         </iframe>
-        <div class="footer">
-            Powered by <a href="https://uniswap.org" style="color: #00B5FF;" target="_blank">Uniswap</a>
-        </div>
     </div>
 
-    <!-- Price Display -->
-    <div class="price-box" id="price-box">
-        Fetching Price...
+    <div class="price-box" id="price-box">Fetching Price...</div>
+    <div class="price-change" id="price-change"></div>
+
+    <div class="chart-container">
+        <canvas id="priceChart"></canvas>
     </div>
 
     <script>
-        // Fetch DELTA price in USD from GeckoTerminal API
-        async function fetchDeltaPrice() {
+        async function fetchDeltaData() {
             try {
                 const response = await fetch('https://api.geckoterminal.com/api/v2/networks/base/pools/0x7487c50bf616088c1f28df50b6d73109241c3f9221cf942b5796e900f31fbdd4');
                 const data = await response.json();
-                const priceUSD = data.data.attributes.base_token_price_usd;
+                const priceUSD = parseFloat(data.data.attributes.base_token_price_usd).toFixed(6);
+                const priceChange = parseFloat(data.data.attributes.price_change_percentage_24h).toFixed(2);
                 
-                // Update the price box with the fetched price
-                document.getElementById('price-box').innerText = `DELTA Price:\n$${parseFloat(priceUSD).toFixed(6)} USD`;
+                document.getElementById('price-box').innerText = `DELTA Price: $${priceUSD} USD`;
+                const changeElement = document.getElementById('price-change');
+                changeElement.innerText = `24h Change: ${priceChange}%`;
+                changeElement.style.color = priceChange >= 0 ? 'limegreen' : 'red';
+                
+                // Fetch historical data
+                fetchPriceChart();
             } catch (error) {
-                console.error('Error fetching DELTA price:', error);
+                console.error('Error fetching DELTA data:', error);
                 document.getElementById('price-box').innerText = 'Price Unavailable';
             }
         }
 
-        // Fetch price immediately on load
-        fetchDeltaPrice();
-
-        // Refresh the price every 30 seconds
-        setInterval(fetchDeltaPrice, 30000);
+        async function fetchPriceChart() {
+            try {
+                const response = await fetch('https://api.geckoterminal.com/api/v2/networks/base/tokens/0x9ed933f2241135AE6b37e5Ad3EbD6D2a4D989fec/price_chart?interval=1h');
+                const data = await response.json();
+                
+                const labels = data.data.attributes.timestamps.map(timestamp => {
+                    return new Date(timestamp * 1000).toLocaleTimeString();
+                });
+                const prices = data.data.attributes.prices.map(price => parseFloat(price));
+                
+                const ctx = document.getElementById('priceChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'DELTA Price (USD)',
+                            data: prices,
+                            borderColor: 'limegreen',
+                            backgroundColor: 'rgba(0, 255, 0, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            } catch (error) {
+                console.error('Error fetching price chart:', error);
+            }
+        }
+        
+        fetchDeltaData();
+        setInterval(fetchDeltaData, 30000);
     </script>
 </body>
 </html>
