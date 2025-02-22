@@ -10,7 +10,7 @@
             font-family: 'Poppins', sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #101820FF; /* Dark background, matching Uniswap theme */
+            background-color: #101820FF; /* Dark background matching Uniswap theme */
             color: white;
             display: flex;
             justify-content: center;
@@ -36,7 +36,7 @@
             left: 2%;
         }
         .uniswap-container {
-            background-color: #1C1C1C; /* Uniswap background color */
+            background-color: #1C1C1C; /* Uniswap widget background color */
             padding: 30px;
             border-radius: 15px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
@@ -52,9 +52,10 @@
             margin-bottom: 20px;
             text-align: center;
         }
-        .uniswap-widget {
-            width: 100%;
-            height: 400px;
+        .price-display {
+            font-size: 18px;
+            margin-bottom: 20px;
+            text-align: center;
         }
         .footer {
             font-size: 16px;
@@ -63,6 +64,8 @@
             text-align: center;
         }
     </style>
+    <!-- Uniswap Widget Script -->
+    <script src="https://widgets.uniswap.org/v3"></script>
 </head>
 <body>
     <div id="logo-text">Uniswap</div>
@@ -70,13 +73,43 @@
 
     <div class="uniswap-container">
         <h1>Swap DELTA for ETH</h1>
-        <!-- Uniswap Widget Embed -->
-        <iframe src="https://app.uniswap.org/#/swap?inputCurrency=0x9ed933f2241135AE6b37e5Ad3EbD6D2a4D989fec&outputCurrency=ETH"
-                class="uniswap-widget" frameborder="0" style="border-radius: 12px;"></iframe>
+        <div id="price" class="price-display">Fetching price...</div>
+        <!-- Uniswap Widget Mount Point -->
+        <div id="uniswap-widget" style="width: 100%; max-width: 600px;"></div>
 
         <div class="footer">
             Powered by <a href="https://uniswap.org" style="color: #00B5FF;" target="_blank">Uniswap</a>
         </div>
     </div>
+
+    <script>
+        // Initialize the Uniswap Widget
+        Uniswap.init({
+            appName: 'DELTA Swap',
+            networkId: 1, // Mainnet
+            defaultInputTokenAddress: '0x9ed933f2241135AE6b37e5Ad3EbD6D2a4D989fec', // DELTA Token Address
+            defaultOutputTokenAddress: 'ETH', // Output token is ETH
+            parentElement: document.getElementById('uniswap-widget'),
+            theme: 'dark',
+            width: '100%',
+            height: 660
+        });
+
+        // Fetch DELTA price in USD
+        async function fetchDeltaPrice() {
+            try {
+                const response = await fetch('https://api.geckoterminal.com/api/v2/networks/eth/pools/0x37d9fa6a597c5334781fb4dfba2cfa5c8ca65f4f');
+                const data = await response.json();
+                const priceUSD = data.data.attributes.base_token_price_usd;
+                document.getElementById('price').innerText = `Current DELTA Price: $${parseFloat(priceUSD).toFixed(6)} USD`;
+            } catch (error) {
+                console.error('Error fetching DELTA price:', error);
+                document.getElementById('price').innerText = 'Error fetching price.';
+            }
+        }
+
+        // Fetch price on page load
+        fetchDeltaPrice();
+    </script>
 </body>
 </html>
