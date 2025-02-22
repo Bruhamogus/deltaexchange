@@ -4,88 +4,79 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DELTA to ETH Swap</title>
-    <script src="https://cdn.jsdelivr.net/npm/ethers@5.4.7/dist/ethers.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #101820FF; /* Dark background, matching Uniswap theme */
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+        #logo-text {
+            position: absolute;
+            font-size: 70px;
+            color: rgba(255, 255, 255, 0.1);
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: -1;
+        }
+        #logo {
+            font-size: 30px;
+            color: rgba(255, 255, 255, 0.7);
+            position: absolute;
+            top: 10%;
+            left: 2%;
+        }
+        .uniswap-container {
+            background-color: #1C1C1C; /* Uniswap background color */
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .uniswap-widget {
+            width: 100%;
+            height: 400px;
+        }
+        .footer {
+            font-size: 16px;
+            color: #999;
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
-    <h1>Swap DELTA for ETH</h1>
-    <button id="connectButton">Connect Wallet</button>
-    <br><br>
-    <input type="number" id="amount" placeholder="Amount of DELTA to swap">
-    <button id="swapButton" disabled>Swap DELTA for ETH</button>
+    <div id="logo-text">Uniswap</div>
+    <div id="logo">Uniswap Logo</div>
 
-    <script>
-        const DELTA_ADDRESS = "0x9ed933f2241135AE6b37e5Ad3EbD6D2a4D989fec"; // DELTA token address on Base
-        const UNISWAP_ROUTER_ADDRESS = "0x5C69bEe701ef814a2B6a3EDD8bD49bF0B11A0e9f"; // Uniswap router address
-        const TOKEN_DECIMALS = 18; // Usually ERC-20 tokens have 18 decimals, adjust if needed
+    <div class="uniswap-container">
+        <h1>Swap DELTA for ETH</h1>
+        <!-- Uniswap Widget Embed -->
+        <iframe src="https://app.uniswap.org/#/swap?inputCurrency=0x9ed933f2241135AE6b37e5Ad3EbD6D2a4D989fec&outputCurrency=ETH"
+                class="uniswap-widget" frameborder="0" style="border-radius: 12px;"></iframe>
 
-        let provider;
-        let signer;
-        let userAddress;
-        let delTokenContract;
-        let routerContract;
-
-        // Connect MetaMask wallet
-        async function connectWallet() {
-            if (window.ethereum) {
-                provider = new ethers.providers.Web3Provider(window.ethereum);
-                await provider.send("eth_requestAccounts", []);
-                signer = provider.getSigner();
-                userAddress = await signer.getAddress();
-                delTokenContract = new ethers.Contract(DELTA_ADDRESS, ["function approve(address spender, uint256 amount) public returns (bool)"], signer);
-                routerContract = new ethers.Contract(UNISWAP_ROUTER_ADDRESS, [
-                    "function swapExactTokensForETH(uint256 amountIn, uint256 amountOutMin, address[] calldata path, address to, uint256 deadline) external",
-                    "function getAmountsOut(uint256 amountIn, address[] calldata path) external view returns (uint256[] memory amounts)"
-                ], signer);
-                document.getElementById("swapButton").disabled = false;
-            } else {
-                alert("Please install MetaMask!");
-            }
-        }
-
-        // Approve DELTA token for Uniswap swap
-        async function approveDELTA(amount) {
-            const delAmount = ethers.utils.parseUnits(amount.toString(), TOKEN_DECIMALS);
-            const approval = await delTokenContract.approve(UNISWAP_ROUTER_ADDRESS, delAmount);
-            await approval.wait();
-        }
-
-        // Swap DELTA for ETH
-        async function swapDELTAForETH(amount) {
-            const delAmount = ethers.utils.parseUnits(amount.toString(), TOKEN_DECIMALS);
-            const path = [DELTA_ADDRESS, "0xC02aaA39b223FE8D0A0e5C4F27EAD9083C756Cc2"]; // DELTA to WETH (wrapped ETH)
-            const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes from now
-
-            // Get minimum ETH out value from Uniswap router
-            const amountsOut = await routerContract.getAmountsOut(delAmount, path);
-            const minETHOut = amountsOut[1].mul(95).div(100); // Get 95% of the expected amount (slippage protection)
-
-            // Approve DELTA token first
-            await approveDELTA(amount);
-
-            // Swap DELTA for ETH on Uniswap
-            const swapTx = await routerContract.swapExactTokensForETH(
-                delAmount,
-                minETHOut,
-                path,
-                userAddress,
-                deadline
-            );
-            await swapTx.wait();
-            alert("Swap successful!");
-        }
-
-        // Swap Button click handler
-        document.getElementById("swapButton").addEventListener("click", async () => {
-            const amount = document.getElementById("amount").value;
-            if (amount > 0) {
-                await swapDELTAForETH(amount);
-            } else {
-                alert("Please enter a valid amount.");
-            }
-        });
-
-        // Connect wallet button
-        document.getElementById("connectButton").addEventListener("click", connectWallet);
-    </script>
+        <div class="footer">
+            Powered by <a href="https://uniswap.org" style="color: #00B5FF;" target="_blank">Uniswap</a>
+        </div>
+    </div>
 </body>
 </html>
