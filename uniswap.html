@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Swap DELTA to ETH</title>
+    <script src="https://cdn.jsdelivr.net/npm/@uniswap/sdk-core@3.2.0/dist/index.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@uniswap/v3-sdk@3.2.0/dist/index.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.6.3/dist/umd/index.min.js"></script>
     <style>
         body {
             display: flex;
@@ -12,29 +15,71 @@
             height: 100vh;
             background-color: #f4f4f4;
         }
-        iframe {
-            border: none;
-            width: 420px;
-            height: 650px;
-            border-radius: 10px;
-        }
     </style>
 </head>
 <body>
-    <iframe src="https://app.uniswap.org/#/swap?inputCurrency=0x9ed933f2241135AE6b37e5Ad3EbD6D2a4D989fec&outputCurrency=ETH&chain=base"></iframe>
     <script>
-        // MetaMask wallet connection prompt could be added here if necessary
-        if (typeof window.ethereum !== 'undefined') {
-            ethereum.request({ method: 'eth_requestAccounts' })
-                .then(accounts => {
-                    console.log('MetaMask connected:', accounts);
-                })
-                .catch(error => {
-                    console.log('MetaMask connection error:', error);
-                });
-        } else {
-            alert('MetaMask is not installed. Please install it to interact with the platform.');
+        // Initialize WalletConnect provider
+        const provider = new WalletConnectProvider({
+            rpc: { 137: "https://polygon-rpc.com" }, // You can set your RPC URL for the Base network
+            chainId: 137 // Polygon mainnet, change this if you want Base network (or use any other chainId you want)
+        });
+
+        async function connectWallet() {
+            try {
+                // Enable the provider
+                await provider.enable();
+                console.log('Wallet connected successfully!');
+
+                // Create a Web3 instance using WalletConnect provider
+                const web3 = new Web3(provider);
+
+                // Set up Uniswap token swap logic
+                const chainId = 137; // The chain ID for your token (Base network or Polygon, for example)
+                const DELTA_ADDRESS = '0x9ed933f2241135AE6b37e5Ad3EbD6D2a4D989fec'; // Your DELTA token address
+                const ETH_ADDRESS = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'; // ETH address for Uniswap
+
+                // Initialize Uniswap's SwapRouter and Token logic (assuming Uniswap v3)
+                const DELTA = new Token(chainId, DELTA_ADDRESS, 18);
+                const ETH = new Token(chainId, ETH_ADDRESS, 18);
+
+                // Create the pair from DELTA -> ETH
+                const pair = await Fetcher.fetchPairData(DELTA, ETH);
+                const route = new Route([pair], DELTA);
+
+                // Get the amount to swap (in the real world, this would come from the user's input)
+                const amountIn = "1000000000000000000"; // 1 DELTA (replace with dynamic value)
+
+                const trade = new Trade(route, new TokenAmount(DELTA, amountIn), TradeType.EXACT_INPUT);
+                const slippageTolerance = new Percent("50", "10000"); // 0.5% slippage
+
+                // Create the transaction
+                const path = [DELTA.address, ETH.address];
+                const to = provider.selectedAddress; // Destination wallet address
+                const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes from now
+
+                const transaction = {
+                    data: trade.transaction.data,
+                    to: trade.transaction.to,
+                    from: provider.selectedAddress,
+                    value: trade.transaction.value.toString(),
+                    gasLimit: await web3.eth.estimateGas({ to: trade.transaction.to, data: trade.transaction.data }),
+                    gasPrice: await web3.eth.getGasPrice(),
+                    chainId: chainId,
+                    nonce: await web3.eth.getTransactionCount(provider.selectedAddress),
+                    deadline: deadline,
+                };
+
+                // Send the transaction via the provider (WalletConnect)
+                const txHash = await web3.eth.sendTransaction(transaction);
+                console.log('Transaction sent, hash:', txHash);
+            } catch (error) {
+                console.error('Error connecting wallet or swapping:', error);
+            }
         }
+
+        // Automatically connect and swap when the page loads (or you can trigger this manually)
+        window.onload = connectWallet;
     </script>
 </body>
 </html>
