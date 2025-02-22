@@ -40,14 +40,14 @@
     </div>
 
     <script>
-        // Fetch DeltaCoin price and growth data from GeckoTerminal
-        const contractAddress = "0x7487c50bf616088c1f28df50b6d73109241c3f9221cf942b5796e900f31fbdd4";
-        const geckoUrl = `https://api.geckoterminal.com/api/v2/price?contractAddress=${contractAddress}&network=base`;
+        // Fetch DeltaCoin price and growth data from CoinGecko API
+        const contractAddress = "0x9ed933f2241135AE6b37e5Ad3EbD6D2a4D989fec";  // DeltaCoin contract address on Base
+        const geckoUrl = `https://api.coingecko.com/api/v3/simple/token_price/base?contract_addresses=${contractAddress}&vs_currencies=usd`;
 
         axios.get(geckoUrl)
             .then(response => {
-                const price = response.data.data.price;
-                const percentChange = response.data.data.price_change_percentage_24h;
+                const price = response.data[contractAddress.toLowerCase()].usd;
+                const percentChange = response.data[contractAddress.toLowerCase()].usd_24h_change || 0;
 
                 // Display price and growth
                 document.getElementById('deltaPrice').textContent = `$${price.toFixed(2)}`;
@@ -55,8 +55,8 @@
             })
             .catch(error => {
                 console.error("Error fetching price data", error);
-                document.getElementById('deltaPrice').textContent = "Error";
-                document.getElementById('priceChange').textContent = "Error";
+                document.getElementById('deltaPrice').textContent = "Error fetching data";
+                document.getElementById('priceChange').textContent = "Error fetching data";
             });
 
         // Initialize Uniswap widget with DeltaCoin (DELTA) preselected
