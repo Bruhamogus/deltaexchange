@@ -71,18 +71,19 @@
                 const response = await fetch('https://api.geckoterminal.com/api/v2/networks/base/pools/0x7487c50bf616088c1f28df50b6d73109241c3f9221cf942b5796e900f31fbdd4');
                 const data = await response.json();
                 const priceUSD = parseFloat(data.data.attributes.base_token_price_usd).toFixed(6);
-                const priceChange = parseFloat(data.data.attributes.price_change_percentage_24h).toFixed(2);
+                const priceChange = data.data.attributes.price_change_percentage_24h ? parseFloat(data.data.attributes.price_change_percentage_24h).toFixed(2) : "N/A";
                 
                 document.getElementById('price-box').innerText = `DELTA Price: $${priceUSD} USD`;
                 const changeElement = document.getElementById('price-change');
                 changeElement.innerText = `24h Change: ${priceChange}%`;
-                changeElement.style.color = priceChange >= 0 ? 'limegreen' : 'red';
+                changeElement.style.color = priceChange !== "N/A" && priceChange >= 0 ? 'limegreen' : 'red';
                 
                 // Fetch historical data
                 fetchPriceChart();
             } catch (error) {
                 console.error('Error fetching DELTA data:', error);
                 document.getElementById('price-box').innerText = 'Price Unavailable';
+                document.getElementById('price-change').innerText = '24h Change: N/A';
             }
         }
 
