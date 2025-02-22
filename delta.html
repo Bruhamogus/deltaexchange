@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DELTA Swap</title>
+    <title>DELTA to ETH Swap</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.10.0/web3.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@uniswap/sdk@3.0.0"></script>
     <style>
         body {
             background-color: #111;
@@ -22,7 +21,7 @@
             margin: auto;
             box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
         }
-        input, select, button {
+        input, button {
             padding: 10px;
             margin: 10px;
             font-size: 18px;
@@ -41,26 +40,23 @@
     </style>
 </head>
 <body>
-    <h1>DELTA Swap</h1>
+    <h1>DELTA to ETH Swap</h1>
     <div class="container">
         <p>Your DELTA Balance: <span id="deltaBalance">0</span> DELTA</p>
         <button onclick="connectWallet()">Connect MetaMask</button>
         <br>
         <input type="number" id="deltaAmount" placeholder="Amount of DELTA" />
-        <select id="currencySelect">
-            <option value="weth">Ethereum (WETH)</option>
-            <option value="doge">Dogecoin (DOGE)</option>
-        </select>
-        <button onclick="swapCurrency()">Swap</button>
+        <button onclick="swapDeltaForETH()">Swap DELTA to ETH</button>
         <p id="result"></p>
     </div>
 
     <script>
         let web3;
         let userAccount;
-        const deltaCoinAddress = "0x9ed933f2241135AE6b37e5Ad3EbD6D2a4D989fec"; // DELTA Contract
-        const uniswapRouterAddress = "0x1111111111111111111111111111111111111111"; // Replace with Base's Uniswap Router
-        const deltaABI = [ /* DELTA ERC-20 ABI (Include balanceOf & approve) */ ];
+        const deltaCoinAddress = "0x9ed933f2241135AE6b37e5Ad3EbD6D2a4D989fec"; // DELTA Contract Address
+        const uniswapRouterAddress = "0x1111111111111111111111111111111111111111"; // Replace with Uniswap Router on Base
+        const wethAddress = "0x4200000000000000000000000000000000000006"; // Base WETH Address (ETH on Base)
+        const deltaABI = [ /* DELTA ERC-20 ABI (Only include balanceOf & approve) */ ];
 
         async function connectWallet() {
             if (window.ethereum) {
@@ -80,25 +76,15 @@
             document.getElementById("deltaBalance").innerText = web3.utils.fromWei(balance, "ether");
         }
 
-        async function swapCurrency() {
+        async function swapDeltaForETH() {
             const deltaAmount = document.getElementById("deltaAmount").value;
-            const selectedCurrency = document.getElementById("currencySelect").value;
-
             if (!deltaAmount || deltaAmount <= 0) {
                 alert("Enter a valid DELTA amount.");
                 return;
             }
 
             const amountInWei = web3.utils.toWei(deltaAmount, "ether");
-            let outputTokenAddress = "";
-
-            if (selectedCurrency === "weth") {
-                outputTokenAddress = "0x4200000000000000000000000000000000000006"; // WETH on Base
-            } else if (selectedCurrency === "doge") {
-                outputTokenAddress = "0x9c64a858141ea5303ea94f1dddbbf923d211dfa4"; // Dogecoin on Base
-            }
-
-            const path = [deltaCoinAddress, outputTokenAddress];
+            const path = [deltaCoinAddress, wethAddress];
             console.log("Swap Path:", path);
 
             try {
@@ -118,7 +104,7 @@
                             { "name": "to", "type": "address" },
                             { "name": "deadline", "type": "uint256" }
                         ],
-                        "name": "swapExactTokensForTokens",
+                        "name": "swapExactTokensForETH",
                         "outputs": [{ "name": "", "type": "uint256[]" }],
                         "type": "function"
                     }
@@ -127,7 +113,7 @@
                 const deadline = Math.floor(Date.now() / 1000) + (60 * 10); // 10 minutes from now
 
                 await uniswapRouter.methods
-                    .swapExactTokensForTokens(
+                    .swapExactTokensForETH(
                         amountInWei,
                         0,  // Minimum amountOut (use slippage settings)
                         path,
