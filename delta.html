@@ -53,10 +53,10 @@
     <script>
         let web3;
         let userAccount;
-        const deltaCoinAddress = "0x9ed933f2241135AE6b37e5Ad3EbD6D2a4D989fec"; // DELTA Contract Address
-        const uniswapRouterAddress = "0x1111111111111111111111111111111111111111"; // Replace with Uniswap Router on Base
-        const wethAddress = "0x4200000000000000000000000000000000000006"; // Base WETH Address (ETH on Base)
-        const deltaABI = [ /* DELTA ERC-20 ABI (Include balanceOf & approve) */ ];
+        const deltaCoinAddress = "0x9ed933f2241135AE6b37e5Ad3EbD6D2a4D989fec"; // DELTA Token on Base
+        const uniswapRouterAddress = "0x327Df1E6de05895d2ab08513aaDD9313Fe505d86"; // Uniswap V3 Router on Base
+        const wethAddress = "0x4200000000000000000000000000000000000006"; // Wrapped ETH (ETH on Base)
+        const deltaABI = [ /* DELTA ERC-20 ABI (balanceOf & approve) */ ];
 
         async function connectWallet() {
             if (window.ethereum) {
@@ -85,15 +85,14 @@
 
             const amountInWei = web3.utils.toWei(deltaAmount, "ether");
             const path = [deltaCoinAddress, wethAddress];
-            console.log("Swap Path:", path);
 
             try {
-                // (A) Open MetaMask for Approval
+                // (A) Approve DELTA for Uniswap (MetaMask Opens)
                 const deltaContract = new web3.eth.Contract(deltaABI, deltaCoinAddress);
                 await deltaContract.methods.approve(uniswapRouterAddress, amountInWei).send({ from: userAccount });
                 alert("Approval successful!");
 
-                // (B) Open MetaMask for Swap Transaction
+                // (B) Swap DELTA for ETH (MetaMask Opens Again)
                 const uniswapRouter = new web3.eth.Contract([
                     {
                         "constant": false,
