@@ -26,12 +26,20 @@
         let account;
 
         async function connectWallet() {
-            if (!window.ethereum) return alert("MetaMask not found");
-            provider = new ethers.providers.Web3Provider(window.ethereum);
-            await provider.send("eth_requestAccounts", []);
-            signer = provider.getSigner();
-            account = await signer.getAddress();
-            updateBalance();
+            if (!window.ethereum) {
+                alert("MetaMask not found. Please install MetaMask.");
+                return;
+            }
+            try {
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                const accounts = await provider.send("eth_requestAccounts", []);
+                signer = provider.getSigner();
+                account = accounts[0];
+                document.getElementById("connectWallet").innerText = `Connected: ${account.substring(0, 6)}...${account.slice(-4)}`;
+                updateBalance();
+            } catch (error) {
+                alert("Connection failed: " + error.message);
+            }
         }
 
         async function updateBalance() {
