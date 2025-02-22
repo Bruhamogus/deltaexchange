@@ -1,165 +1,62 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DELTA to ETH Swap</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.10.0/web3.min.js"></script>
-    <style>
-        body {
-            background-color: #111;
-            color: white;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
-        }
-        .container {
-            background: #222;
-            padding: 20px;
-            border-radius: 15px;
-            width: 50%;
-            margin: auto;
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
-        }
-        input, button {
-            padding: 10px;
-            margin: 10px;
-            font-size: 18px;
-            border-radius: 10px;
-            border: none;
-        }
-        button {
-            background: #ff9900;
-            color: white;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-        button:hover {
-            background: #ff6600;
-        }
-    </style>
-</head>
-<body>
-    <h1>DELTA to ETH Swap</h1>
-    <div class="container">
-        <p>Your DELTA Balance: <span id="deltaBalance">0</span> DELTA</p>
-        <button onclick="connectWallet()">Connect MetaMask</button>
-        <br>
-        <input type="number" id="deltaAmount" placeholder="Amount of DELTA" />
-        <button onclick="swapDeltaForETH()">Swap DELTA to ETH</button>
-        <p id="result"></p>
+import { useState, useEffect } from "react";
+import { ethers } from "ethers";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+
+const DELTA_ADDRESS = "0x9ed933f2241135AE6b37e5Ad3EbD6D2a4D989fec";
+const DELTA_ABI = [
+  "function approve(address spender, uint256 amount) public returns (bool)",
+  "function balanceOf(address owner) view returns (uint256)",
+  "function transferFrom(address sender, address recipient, uint256 amount) public returns (bool)"
+];
+
+export default function Swap() {
+  const [amount, setAmount] = useState("");
+  const [account, setAccount] = useState(null);
+  const [provider, setProvider] = useState(null);
+
+  useEffect(() => {
+    if (window.ethereum) {
+      const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
+      setProvider(web3Provider);
+    }
+  }, []);
+
+  const connectWallet = async () => {
+    if (!provider) return;
+    const accounts = await provider.send("eth_requestAccounts", []);
+    setAccount(accounts[0]);
+  };
+
+  const swapTokens = async () => {
+    if (!provider || !account) return;
+    const signer = provider.getSigner();
+    const deltaContract = new ethers.Contract(DELTA_ADDRESS, DELTA_ABI, signer);
+    const amountInWei = ethers.utils.parseUnits(amount, 18);
+    
+    await deltaContract.approve(account, amountInWei);
+    await deltaContract.transferFrom(account, "swap_contract_address", amountInWei);
+    
+    // Implement ETH payout logic
+  };
+
+  return (
+    <div className="flex justify-center items-center h-screen bg-gray-900 text-white">
+      <Card className="w-96 p-6">
+        <CardContent>
+          <h2 className="text-xl font-bold mb-4">Swap DELTA for ETH</h2>
+          <Input 
+            type="number" 
+            placeholder="Amount in DELTA" 
+            value={amount} 
+            onChange={(e) => setAmount(e.target.value)}
+          />
+          <Button className="w-full mt-4" onClick={account ? swapTokens : connectWallet}>
+            {account ? "Swap" : "Connect Wallet"}
+          </Button>
+        </CardContent>
+      </Card>
     </div>
-
-    <script>
-        let web3;
-        let userAccount;
-        const deltaCoinAddress = "0x9ed933f2241135AE6b37e5Ad3EbD6D2a4D989fec"; // DELTA Token
-        const uniswapRouterAddress = "0x327Df1E6de05895d2ab08513aaDD9313Fe505d86"; // Uniswap Router V3 on Base
-        const wethAddress = "0x4200000000000000000000000000000000000006"; // Wrapped ETH (ETH on Base)
-
-        const deltaABI = [
-            {
-                "constant": false,
-                "inputs": [
-                    { "name": "_spender", "type": "address" },
-                    { "name": "_value", "type": "uint256" }
-                ],
-                "name": "approve",
-                "outputs": [{ "name": "success", "type": "bool" }],
-                "type": "function"
-            },
-            {
-                "constant": true,
-                "inputs": [{ "name": "_owner", "type": "address" }],
-                "name": "balanceOf",
-                "outputs": [{ "name": "balance", "type": "uint256" }],
-                "type": "function"
-            }
-        ];
-
-        async function connectWallet() {
-            if (window.ethereum) {
-                web3 = new Web3(window.ethereum);
-                const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-                userAccount = accounts[0];
-                alert("Connected: " + userAccount);
-                displayBalance();
-            } else {
-                alert("Please install MetaMask.");
-            }
-        }
-
-        async function displayBalance() {
-            try {
-                const contract = new web3.eth.Contract(deltaABI, deltaCoinAddress);
-                const balance = await contract.methods.balanceOf(userAccount).call();
-                document.getElementById("deltaBalance").innerText = web3.utils.fromWei(balance, "ether");
-            } catch (error) {
-                console.error("Balance Error:", error);
-            }
-        }
-
-        async function swapDeltaForETH() {
-            const deltaAmount = document.getElementById("deltaAmount").value;
-            if (!deltaAmount || deltaAmount <= 0) {
-                alert("Enter a valid DELTA amount.");
-                return;
-            }
-
-            const amountInWei = web3.utils.toWei(deltaAmount, "ether");
-            const path = [deltaCoinAddress, wethAddress];
-
-            try {
-                // Ensure Web3 is initialized
-                if (!web3) {
-                    alert("Connect MetaMask first!");
-                    return;
-                }
-
-                // (A) Approve DELTA for Uniswap (MetaMask Opens)
-                const deltaContract = new web3.eth.Contract(deltaABI, deltaCoinAddress);
-                console.log("Approving Uniswap to spend DELTA...");
-                await deltaContract.methods.approve(uniswapRouterAddress, amountInWei).send({ from: userAccount });
-                alert("Approval successful!");
-
-                // (B) Swap DELTA for ETH (MetaMask Opens Again)
-                const uniswapRouter = new web3.eth.Contract([
-                    {
-                        "constant": false,
-                        "inputs": [
-                            { "name": "amountIn", "type": "uint256" },
-                            { "name": "amountOutMin", "type": "uint256" },
-                            { "name": "path", "type": "address[]" },
-                            { "name": "to", "type": "address" },
-                            { "name": "deadline", "type": "uint256" }
-                        ],
-                        "name": "swapExactTokensForETH",
-                        "outputs": [{ "name": "", "type": "uint256[]" }],
-                        "type": "function"
-                    }
-                ], uniswapRouterAddress);
-
-                const deadline = Math.floor(Date.now() / 1000) + (60 * 10); // 10 minutes from now
-
-                console.log("Executing swap on Uniswap...");
-                await uniswapRouter.methods
-                    .swapExactTokensForETH(
-                        amountInWei,
-                        0,  // Minimum amountOut (use slippage settings)
-                        path,
-                        userAccount,
-                        deadline
-                    )
-                    .send({ from: userAccount });
-
-                alert("Swap successful! Check MetaMask for details.");
-                displayBalance();
-
-            } catch (error) {
-                console.error("Swap error:", error);
-                alert("Error occurred while performing the swap.");
-            }
-        }
-    </script>
-</body>
-</html>
+  );
+}
